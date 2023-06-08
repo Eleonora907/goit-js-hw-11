@@ -26,7 +26,6 @@ export class PixabayAPI {
       const response = await axios.get(`${PixabayAPI.BASE_URL}?${searchParams}`);
       return response.data;
     } catch (error) {
-      console.log('Error:', error);
       Notiflix.Notify.failure(`Something went wrong: ${error.message}`);
     }
   };

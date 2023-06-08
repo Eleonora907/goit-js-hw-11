@@ -16,8 +16,6 @@ const handleSearchSubmit = async event => {
   const searchQuery = event.target.elements.searchQuery.value.trim();
   if (searchQuery === '') {
     Notiflix.Notify.warning('Please enter a search query.');
-    galleryListEl.innerHTML = '';
-    galleryObserver.disconnect(); 
     return;
   }
 
@@ -33,7 +31,7 @@ const handleSearchSubmit = async event => {
       
     }
 
-    else if (data.total_pages !== 1) {
+    if (data.total_pages !== 1) {
       setTimeout(() => {
         galleryObserver.observe(observerdEl);
       }, 1000);
