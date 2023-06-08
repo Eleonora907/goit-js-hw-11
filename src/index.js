@@ -11,35 +11,38 @@ const observerdEl = document.querySelector('.observerd-element');
 const pixabayAPI = new PixabayAPI();
 const lightbox = new SimpleLightbox('.gallery a');
 
-const handleSearchSuccess = data => {
-  if (data.totalHits === 0) {
+const handleSearchSubmit = async event => {
+  event.preventDefault();
+  const searchQuery = event.target.elements.searchQuery.value.trim();
+  if (searchQuery === '') {
+    Notiflix.Notify.warning('Please enter a search query.');
     galleryListEl.innerHTML = '';
-    Notiflix.Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
+    galleryObserver.disconnect(); 
     return;
   }
 
-  if (data.totalHits > PixabayAPI.perPage) {
-    galleryObserver.observe(observerdEl);
-  }
-
-  galleryListEl.innerHTML = createGalleryCards(data.hits);
-  Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
-  lightbox.refresh();
-};
-
-const handleSearchSubmit = async event => {
-  event.preventDefault();
-
   pixabayAPI.page = 1;
-  pixabayAPI.query = event.target.elements.searchQuery.value.trim();
+  pixabayAPI.query = searchQuery;
 
   try {
     const data = await pixabayAPI.fetchPhotosByQuery();
-    handleSearchSuccess(data);
-  } catch (err) {
-    console.log('Error:', error);
+
+    if (data.totalHits === 0) {
+      galleryListEl.innerHTML = '';
+      return Notiflix.Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+      
+    }
+
+    else if (data.total_pages !== 1) {
+      setTimeout(() => {
+        galleryObserver.observe(observerdEl);
+      }, 1000);
+    }
+
+    else galleryListEl.innerHTML = createGalleryCards(data.hits);
+    Notiflix.Notify.success(`Hooray! We found ${data.totalHits} images.`);
+    lightbox.refresh();
+  } catch (error) {
     Notiflix.Notify.failure(`Something went wrong: ${error.message}`);
   }
 };
@@ -52,7 +55,10 @@ const galleryObserver = new IntersectionObserver(
       pixabayAPI
         .fetchPhotosByQuery()
         .then(data => {
-          galleryListEl.insertAdjacentHTML('beforeend', createGalleryCards(data.hits));
+          galleryListEl.insertAdjacentHTML(
+            'beforeend',
+            createGalleryCards(data.hits)
+          );
 
           if (pixabayAPI.page === data.totalPages) {
             observer.unobserve(observerdEl);
@@ -65,12 +71,11 @@ const galleryObserver = new IntersectionObserver(
   },
   {
     root: null,
-    rootMargin: '0px',
+    rootMargin: '0px 0px 400px 0px',
     threshold: 0.5,
   }
 );
 
 
 searchFormEl.addEventListener('submit', handleSearchSubmit);
-
 
